@@ -1,0 +1,591 @@
+import java.util.*;
+import java.lang.*;
+import java.io.*;
+
+/** A class for using a Huffman Encoder to compress text files
+  * @authors - Dylan McGuire
+  */
+public class HuffmanLibrary {
+  
+  /** A method for converting the contents of a text file into a String
+    * @params String fileName - The name of a text file to be turned into a string 
+    * @return String - A string representation of the contents of the file
+    */
+  public static String readFileAsString(String fileName) {
+    try {
+      Scanner fileToString = new Scanner(new File(fileName));
+      StringBuilder theString = new StringBuilder();
+      
+      // Goes through every line and adds that line to the StringBuilder
+      while (fileToString.hasNextLine() == true) {
+        theString.append(fileToString.nextLine());
+      }
+      return theString.toString();
+    }
+    // The biggest exception that will be caught is a file not existing exception
+    catch (IOException a) {
+      throw new UnsupportedOperationException("\n The file you are trying to load does not exist");
+    }
+  }
+  
+  /** A method for creating the Huffman Linked List 
+    * @params String fileContents - The contents of a string file 
+    * @returns HLinkedList - A list of HTreeNodes that represent the characters of the file contents
+    */
+  public static HLinkedList createHList(String fileContents) {
+    HLinkedList characterList = new HLinkedList();
+    while (fileContents.length() > 0) {
+      char currentChar = fileContents.charAt(0);
+      // Creates a new node that has the character value of the current char
+      characterList.insertIntoPosition(HuffmanLibrary.createHNode(fileContents) , 0);
+      // Calls removeAllInstances method which removes all occurences of currentChar
+      fileContents = HuffmanLibrary.removeAllInstances(fileContents , currentChar);
+    }
+    return HuffmanLibrary.getSortedLinkedList(characterList);
+  }
+  
+  /** A method for sorting the Huffman Linked List
+    * @params HLinkedList unsortedList - A unsorted Huffman Linked List 
+    * @returns HLinkedList = The sorted linked list 
+    */
+  public static HLinkedList getSortedLinkedList(HLinkedList unsortedList) {
+    int indexInsert = 0;
+    // Creates an area that will store all of the "smallest nodes" giving us the nodes in the correct order
+    HTreeNode[] smallestNodes = new HTreeNode[unsortedList.size()];
+    HLinkedList sortedList = new HLinkedList();
+    int originalSize = unsortedList.size();
+    while (unsortedList.size() != 0) {
+      /** Calls the method getSmallest node and then adds it to the current index of the array 
+        * then repeats the process until the unsorted List is empty and the array is full
+        */
+      HTreeNode smallestNode = HuffmanLibrary.getSmallestNode(unsortedList);
+      smallestNodes[indexInsert] = smallestNode;
+      unsortedList.remove(smallestNode);
+      indexInsert++;
+    }
+    // Necessary to avoid things pointing at themselves
+    for (int i = 0; i < smallestNodes.length; i++) {
+      smallestNodes[i].setNext(null);
+    }
+    // Creates the sorted list by going through the array and adding the values at their indexed positions 
+    for (int i = 0; i < smallestNodes.length; i++) {
+      sortedList.insertIntoPosition(smallestNodes[i] , i);
+    }
+    return sortedList;
+  }
+  
+  /** A method for creating the Huffman Tree 
+    * @params HLinkedList list - The huffman list used to create the tree
+    * @returns HTree - The Huffman tree
+    */
+  public static HTree createHuffmanTree(HLinkedList list) {
+    HLinkedList sortedList = HuffmanLibrary.getSortedLinkedList(list);
+    // Runs until we are left with just one node 
+    while (sortedList.size() >= 2) {
+      // Calls a helper method to combine the first two nodes of the list
+      sortedList = HuffmanLibrary.combineNodes(sortedList);
+    }
+    HTree finalTree = new HTree();
+    // Sets the root of the tree equal to the remaining last item of the linked list 
+    finalTree.setRoot(sortedList.getHeadNode());
+    return finalTree;
+  }
+  
+  /** A method for updating the code values of the Huffman Tree
+    * @params HLinkedList list - The Huffman list 
+    * @params HTree tree - The Huffman treee
+    */
+  public void updateCodeValues(HLinkedList list , HTree tree) {
+    // Calls a helper method to set all of the code values 
+    this.updateLeaf(list , tree.getRoot() , "");
+  }
+  
+  /** A method for compressing an input file 
+    * @params String input_file - The input file that we want to compress 
+    * @params String output_file - The output file name that contains the compressed information
+    */
+  public static void Huffman_coder(String input_file , String output_file) {
+    HuffmanLibrary neededForMethodCalls = new HuffmanLibrary();
+    String input = HuffmanLibrary.readFileAsString(input_file);
+    HLinkedList characterList = HuffmanLibrary.createHList(input);
+    HTree huffmanTree = HuffmanLibrary.createHuffmanTree(HuffmanLibrary.createHList(input));
+    neededForMethodCalls.updateCodeValues(characterList , huffmanTree);
+    StringBuilder binaryConv = new StringBuilder();
+    
+    // Goes through the input file contents and replaces each character with it's correct binary code
+    for (int i = 0; i < input.length(); i++) {
+      char currentChar = input.charAt(i);
+      binaryConv.append(characterList.find(currentChar).getCode());
+    }
+    System.out.println(binaryConv.toString());
+    try {
+      BinaryFileWriter.createBinaryFile(binaryConv.toString() , output_file);
+    }
+    
+    catch (Exception a) {
+      throw new UnsupportedOperationException("\n File does not exist");
+    }
+  }
+  
+  /** A method for creating HTreeNodes using a String 
+    * @params String fileContents - A string representation of a text files contents 
+    * @returns HTreeNode - The new created HTreeNode
+    */
+  private static HTreeNode createHNode(String fileContents) {
+    int frequency = 1;
+    char character = fileContents.charAt(0);
+    // Goes through the whole file counting every instance of the current character
+    for (int i = 0; i < fileContents.length(); i++) {
+      char currentChar = fileContents.charAt(i);
+      if (currentChar == character) 
+        frequency++;
+    }
+    return new HTreeNode(character , frequency , null , null , null);
+  }
+  
+  /** A method for removing all instances of a character from a String 
+    * @params String fileContents - The information we are removing characters from 
+    * @params char CharRemoved - The character we want to remove
+    */
+  private static String removeAllInstances(String fileContents , char charRemoved) {
+    StringBuilder currentString = new StringBuilder();
+    for (int i = 0; i < fileContents.length(); i++) {
+      char currentChar = fileContents.charAt(i);
+      // If the current character is not the character we want to remove, add it to the StringBuilder
+      if (currentChar != charRemoved) 
+        currentString.append(currentChar);
+    }
+    return currentString.toString();
+  }
+  
+  /** A method for retriving the smallest node in a linked list 
+    * @params HLinkedList unsortedList - The Huffman List 
+    * @returns HTreeNode - The smallest node in the list 
+    */
+  private static HTreeNode getSmallestNode(HLinkedList unsortedList) {
+    HTreeNode smallestNode = unsortedList.getHeadNode(); // Start by making the smallest the head node 
+    int smallestFreq = smallestNode.getFrequency();
+    HTreeNode currentNode = smallestNode;
+    int i = 0; 
+    while (i < unsortedList.size()) {
+      // If the current node has a smaller frequency set it as the smallest node 
+      if (currentNode.getFrequency() < smallestFreq) {
+        smallestNode = currentNode;
+        smallestFreq = currentNode.getFrequency(); 
+      }
+      currentNode = currentNode.getNext();
+      i++;
+    }
+    return smallestNode; 
+  }
+  
+  /** A method for combining the first two nodes of a linked list together 
+    * @params HLinkedList list - The sorted Huffman list 
+    * @returns HLinkedList - A new Linked List with the combined node in the correct position 
+    */
+  private static HLinkedList combineNodes(HLinkedList list) {
+    HTreeNode left = list.getHeadNode();
+    HTreeNode right = left.getNext();
+    // Creates the combined node 
+    HTreeNode newRoot = new HTreeNode(' ' , left.getFrequency() + right.getFrequency() , null , left , right);
+    list.remove(left); // Removes this node because it's now a child 
+    list.remove(right); // Removes this node because it's now a child 
+    list.insertIntoPosition(newRoot , 0); // Inserts the combined node into the list 
+    HLinkedList finalList = HuffmanLibrary.getSortedLinkedList(list); // Resorts the list 
+    return finalList;
+  }
+  
+  /** A method for updating the code values of the leaf nodes of the Huffman Tree
+    * @params HLinkedList list - The sorted Huffman linked list 
+    * @params HTreeNode node - The current node we are examining to see if it's a child 
+    * @params String code - The value of the code that needs to be added to the node 
+    */
+  private void updateLeaf(HLinkedList list , HTreeNode node , String code) {
+    // If the node has either a left of right child ... 
+    if (node.getRightChild() != null || node.getLeftChild() != null) {
+      // Recall the method with both the children, adding the appropiate binary value to the string 
+      updateLeaf(list , node.getLeftChild() , code + "0");
+      updateLeaf(list , node.getRightChild() , code + "1");
+    }
+    else {
+      // If it is a leaf set the NodeCode to the value of the input code 
+      node.setCode(code);
+      list.find(node.getCharacter()).setCode(code); // Set the linked list node code value too, makes other things easier
+    }
+  }
+}
+
+
+/** A class for storing all the data necessary of a Huffman Tree Node 
+  * @authors - Dylan McGuire
+  */
+public class HTreeNode {
+  
+  // The character value of the node
+  private char character;
+  
+  // The number of occurances of the character value
+  private int frequency;
+  
+  // The next node in the linked list
+  private HTreeNode next;
+  
+  // The left child of this node 
+  private HTreeNode leftChild;
+  
+  // The right child of this node
+  private HTreeNode rightChild;
+  
+  // The binary representation derivied from the huffman tree
+  private String code = null; 
+  
+  /** Constructor 
+    * @params char character - The character value of the node
+    * @params int frequency - The number of occurances of the character 
+    * @params HTreeNode next - The next node in the linked list 
+    * @params HTreeNode leftChild - The left child of this node 
+    * @params HTreeNode rightChild - The right child of this node
+    */
+  public HTreeNode(char character , int frequency , HTreeNode next , HTreeNode leftChild , HTreeNode rightChild) {
+    this.character = character;
+    this.frequency = frequency;
+    this.next = next; 
+    this.leftChild = leftChild; 
+    this.rightChild = rightChild;
+  }
+  
+  /** A method for returning the character value of the node 
+    * @returns char - The character value of the node
+    */
+  public char getCharacter() {
+    return this.character;
+  }
+  
+  /** A method for returning the frequency of the node 
+    * @returns int - The frequency of the node character
+    */
+  public int getFrequency() {
+    return this.frequency;
+  }
+  
+  /** A method for returning the next value of the node 
+    * @returns HTreeNode - The next node in the linked list
+    */
+  public HTreeNode getNext() {
+    return this.next;
+  }
+  
+  /** A method for setting the next value of the linked list 
+    * @params HTreeNode next - The next value in the Huffman LinkedL List
+    */
+  public void setNext(HTreeNode next) {
+    this.next = next;
+  }
+  
+  /** A method for returning the left child of the node 
+    * @return HTreeNode - The left child of the node
+    */
+  public HTreeNode getLeftChild() {
+    return this.leftChild;
+  }
+  
+  /** A method for setting the left child of the node 
+    * @params HTreeNode leftChild = The left child value of the class
+    */
+  public void setLeft(HTreeNode leftChild) {
+    this.leftChild = leftChild;
+  }
+  
+  /** A method for returning the right child of the node 
+    * @return HTreeNode - The right child of the node 
+    */
+  public HTreeNode getRightChild() {
+    return this.rightChild;
+  }
+  
+  /** A method for setting the right child of the node 
+    * @params HTreeNode rightChild = The right child value of the class 
+    */
+  public void setRight(HTreeNode rightChild) {
+    this.rightChild = rightChild;
+  }
+  
+  /** A method for returning the code value of the node
+    * @returns String = The code of the node
+    */
+  public String getCode() {
+    if (this.code == null) 
+      return new String("N/A");
+    else
+      return this.code;
+  }
+  
+  /** A method for setting the code value of the node 
+    * @params String code - The new code for the node
+    */
+  public void setCode(String code) {
+    this.code = code;
+  }
+  
+  /** A method for returning the information of the node in a string format 
+    * @returns String - A string representation of the data of the node
+    */
+  @Override 
+  public String toString() {
+    return this.getCharacter() + " " + this.getFrequency();
+  }
+  
+  /** A method for determining if two nodes are identicial 
+    * @params Object o - The object the "this" object is compared to 
+    * @returns boolean - A true/false value that states whether or not the two objects are equal
+    */
+  @Override
+  public boolean equals(Object o) {
+    return (o instanceof HTreeNode && ((HTreeNode) o).getCharacter() == this.getCharacter() 
+              && ((HTreeNode) o).getFrequency() == this.getFrequency());
+  }
+}
+  
+import java.lang.*;
+
+/** A class containing all the information in a Huffman Tree 
+  * @authors - Dylan McGuire
+  */
+public class HTree {
+  
+  // A HTreeNode representing the root of the tree
+  private HTreeNode root; 
+ 
+  /** A method for setting the root value of the tree 
+    * @params HTreeNode newRoot - The new root value for the tree
+    */
+  public void setRoot(HTreeNode newRoot) {
+    this.root = newRoot;
+  }
+  
+  /** A method for returning the root value of the tree 
+    * @returns HTreeNode - The root of the tree
+    */
+  public HTreeNode getRoot() {
+    return this.root;
+  }
+  
+  /** A method for returning the left child of the root node
+    * @returns HTreeNode - The tree root's left child
+    */
+  public HTreeNode getLeftChild() {
+    return this.getRoot().getLeftChild();
+  }
+  
+  /** A method for returning the right child of the root node 
+    * @returns HTreeNode - The tree root's right child
+    */
+  public HTreeNode getRightChild() {
+    return this.getRoot().getRightChild();
+  }
+}
+
+
+/** A class for creating a linked list of HTreeNode elements 
+  * @authors - Dylan McGuire
+  */
+public class HLinkedList {
+  
+  // The first value in the list
+  private HTreeNode head;
+  
+  /** Constructor 
+    */
+  public HLinkedList() {
+    this.head = null;
+  }
+  
+  /** A method for obtaining the head node of the list 
+    * @returns HTreeNode - The field head of this class
+    */
+  public HTreeNode getHeadNode() {
+    return this.head;
+  }
+  
+  /** A method for returning the total number of values in the list
+    * @returns int - The value that represents the total number of elements in the list
+    */
+  public int size() {
+    if (this.head == null) {
+      return 0;
+    }
+    int i = 1;
+    // Continues counting until it points to nothing (null)
+    HTreeNode current = head.getNext();
+    while (current != null) {
+      current = current.getNext();
+      i++;
+    }
+    return i;
+  }
+  
+  /** A method for inserting a node into any position of the list 
+    * @params HTreeNode node - The node to be inserted into the list 
+    * @params int position - The position the node is inserted into
+    */
+  public void insertIntoPosition(HTreeNode node , int position) {
+    if (this.head == null) {
+      // If this is the first thing added to the list have the field head point to it
+      head = node;
+    }
+    else {
+      if (position >= this.size() + 1) {
+        position = this.size();
+      }
+      int j = 0; 
+      HTreeNode previous = null;
+      HTreeNode current = head;
+      // Walk the list until you reach the point where the value needs to be inserted
+      while (j < position) {
+        previous = current;
+        current = current.getNext();
+        j++;
+      }
+      // Attach the new value into the list
+      if (previous == null) {
+        node.setNext(this.head);
+        this.head = node;
+      }
+      else {
+        node.setNext(previous.getNext());
+        previous.setNext(node);
+      }
+    }
+  }
+  
+  /** A method for removing a value from the list 
+    * @params HTreeNode node - The node to be removed from the list 
+    */
+  public void remove(HTreeNode node) {
+    HTreeNode previous = null; 
+    HTreeNode current = this.getHeadNode();
+    // Walks the list until it finds the node that needs removed
+    while (current.equals(node) == false) {
+      previous = current; 
+      current = current.getNext();
+      // Throws an exception if the node isn't in the list
+      if (current == null) {
+        throw new UnsupportedOperationException("\n The node you want to remove is not in the list");
+      }
+    }
+    // Removes the node from the list
+    if (previous == null) {
+      this.head = current.getNext();
+    }
+    else {
+      previous.setNext(current.getNext());
+    }
+  }
+  
+  /** A method that returns the node with the specified character value
+    * @param char value - The character we are looking for 
+    * @returns HTreeNode - The node that has the specified character value
+    */
+  public HTreeNode find(char value) {
+    int j = 0;
+    HTreeNode current = head;
+    // Walk the list until you reach the parameter value
+    while (j < this.size()) {
+      if (current.getCharacter() == value) 
+        return current;
+      else {
+        current = current.getNext();
+        j++;
+      }
+    }
+    // Throw an exception if the character does not exist in the list 
+    throw new UnsupportedOperationException("\n The character '" + value + "' is not in the list");
+  }
+  
+  /** A method for determining if two objects are equal
+    * @params Object o - The object for which the "this" object is compared to. 
+    * @returns boolean - The truth value stating whether or not the two objects are equal
+    */
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof HLinkedList && ((HLinkedList) o).size() == this.size()) {
+      int counter = 0; 
+      HTreeNode currentThisNode = this.getHeadNode();
+      HTreeNode currentONode = ((HLinkedList) o).getHeadNode();
+      // Goes through and checks that every element matches the element of the "this" list
+      for (int i = 0; i < this.size(); i++) {
+        if (currentThisNode.equals(currentONode)) {
+          counter++;
+        }
+        currentThisNode = currentThisNode.getNext();
+        currentONode = currentONode.getNext();
+      }
+      return counter == this.size();
+    }
+    else
+      return false;
+  }
+  
+  /** A method for printing out a string representatino of the data stored in the list
+    * @returns String - A representation of the data sttored in the list
+    */
+  @Override
+  public String toString() {
+    StringBuilder print = new StringBuilder();
+    if (this.head == null) {
+      return print.toString();
+    }
+    else {
+      HTreeNode currentNode = this.head;
+      // Prints every element of the list's character and frequency
+      while (currentNode.getNext() != null) {
+        print.append(currentNode.getCharacter() + " " + currentNode.getFrequency() + " ,");
+        currentNode = currentNode.getNext();
+      }
+      print.append(currentNode.getCharacter() + " " + currentNode.getFrequency());
+      return print.toString();
+    }
+  }
+}
+
+import java.io.File;
+import java.io.FileOutputStream;
+
+public class BinaryFileWriter {
+  
+  public static void writeBinaryFile(String fileName,byte[] b) throws Exception{
+    FileOutputStream f = new FileOutputStream (new File(fileName));
+    f.write(b);
+    f.close();
+  }
+  
+  public static void createBinaryFile(String seq,String fileName) throws Exception{
+    writeBinaryFile(fileName,toByteSequence(seq));
+  }
+  
+  public static byte[] toByteSequence(String data) throws Exception{
+    int j=-1;
+    int byteArrSize = data.length()/8;
+    if (data.length()%8 != 0)
+      byteArrSize++;
+    byte[] byteSeq = new byte[byteArrSize];
+    for(int i=0;i< data.length();i++){
+      if (i%8 == 0){
+        j++;
+        byteSeq[j] = 0x00;
+      }
+      byte tmp ;
+      if (data.charAt(i) == '1'){
+        tmp = 0x01;
+      }
+      else if (data.charAt(i) == '0') {
+        tmp = 0x00;
+      }
+      else 
+        throw new Exception ("error in format");
+      byteSeq[j] = (byte) (tmp | ( byteSeq[j] << 1));
+      
+    }
+    return byteSeq;
+  }
+}
