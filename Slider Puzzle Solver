@@ -1,0 +1,583 @@
+import java.util.HashSet;
+
+
+/**
+ * @author Dylan MCGuire
+ *
+ */
+/**
+ * @author Dylan MCGuire
+ *
+ */
+/**
+ * @author Dylan MCGuire
+ *
+ */
+/**
+ * @author Dylan MCGuire
+ *
+ */
+/**
+ * @author Dylan MCGuire
+ *
+ */
+/**
+ * @author Dylan MCGuire
+ *
+ */
+public class SliderPuzzle1 {
+   /** A class for storing the information about game boards
+    * 
+    * @author Dylan MCGuire
+    *
+    */
+   public class PuzzleNode {
+     /** A field for storing the current gameBoard
+      * 
+      */
+     private int[][] gameBoard;
+     /** A field for storing the next value in the queue
+      * 
+      */
+     private PuzzleNode next;
+     /** A field for storing the previous "parent" value in the queue 
+      * 
+      */
+     private PuzzleNode parent;
+     /** A field for storing the size of the game board (boardSize x boardSize)
+      * 
+      */
+     private int boardSize;
+     /** A field for storing the current row of the space
+      * 
+      */
+     private int zeroRow;
+     /** A field for storing the column of the space
+      * 
+      */
+     private int zeroColumn;
+     /** Constuctor 
+      * 
+      * @param size The size of the gameboard (size x size)
+      */
+     public PuzzleNode(int size) {
+       boardSize = size;
+       gameBoard = new int[size][size];
+       zeroRow = 0;
+       zeroColumn = 0;
+       next = null; 
+       parent = null;
+       
+       int count = 0; 
+       // Builds the "board" in a solved position with the space in the upper left corner
+       for (int i = 0; i < size; i++) {
+         int[] currentRow = gameBoard[i];
+         for (int j = 0; j < size; j++) {
+           currentRow[j] = count;
+           count++;
+         }
+       }
+     }
+     /** A method for setting the next field
+      * 
+      * @param next the new value for the next field 
+      */
+     public void setNext(PuzzleNode next) {
+       this.next = next; 
+     }
+     /** A method for retrieving the next field
+      * 
+      * @return the current value of the next field
+      */       
+     public PuzzleNode next() {
+       return next;
+     }
+     /** A method for setting the parent field
+      * 
+      * @param newParent the new value for the parent field 
+      */
+     public void setParent(PuzzleNode newParent) {
+       parent = newParent;
+     }
+     /** A method for retrieving the parent field
+      * 
+      * @return the current value of the parent field 
+      */
+     public PuzzleNode parent() {
+       return parent;
+     }
+     /** A method for setting the zeroRow field
+      * 
+      * @param row the new value for the zeroRow
+      */
+     public void setRow(int row) {
+       zeroRow = row;
+     }
+     /** A method for retrieving the zeroRow field 
+      * 
+      * @return the current value of the zeroRow 
+      */
+     public int row() {
+       return zeroRow;
+     }
+     /** A method for setting the zeroColumn field 
+      * 
+      * @param column the new value of the zeroColumn field
+      */
+     public void setColumn(int column) {
+       zeroColumn = column;
+     }
+     /** A method for retrieving the zeroColumn field
+      * 
+      * @return the current value of the zeroColumn field
+      */
+     public int column() {
+       return zeroColumn;
+     }
+     /** A method for setting the gameBoard field
+      * 
+      * @param board the new value of the gameboard field
+      */
+     public void setBoard(int[][] board) {
+       gameBoard = board;
+     }
+     /** A method for retrieving the gameBoard field
+      * 
+      * @return the current value of the gameBoard field 
+      */
+     public int[][] gameBoard() {
+       return gameBoard;
+     }
+     /** A method for returning the boardSize field
+      * 
+      * @return the current value of the boardSize field 
+      */
+     public int boardSize() {
+       return boardSize;
+     }
+     /** A method for returning a string representation of the PuzzleNode 
+      * 
+      */
+     @Override 
+     public String toString() {
+       String answer = new String("\n");
+       // Goes through and adds every value to a string and replaces 0 with a space 
+     for (int i = 0; i < gameBoard.length; i++) {
+     int[] currentRow = gameBoard[i];
+     for (int j = 0; j < gameBoard.length; j++) {
+       if (currentRow[j] == 0) 
+         answer = answer + "  ";
+       else
+         answer = answer + currentRow[j] + " ";
+     }
+     answer = answer + "\n";
+     }
+       return answer;
+     }
+     /** A method for comparing two PuzzleNode objects 
+      * 
+      */
+     @Override
+       public boolean equals(Object o) {
+       if (o instanceof PuzzleNode && ((PuzzleNode) o).gameBoard().length == boardSize) {
+        // Goes through and checks to make sure all the values are in the same position
+         for (int i = 0; i < boardSize; i++) {
+           int[] gameRow = gameBoard[i];
+           int[] oRow = ((PuzzleNode) o).gameBoard()[i];
+           for (int j = 0; j < boardSize; j++) {
+             int gameValue = gameRow[j];
+             int oValue = oRow[j];
+             if (gameValue != oValue) 
+               return false; // Returns false if they are not 
+           }
+         }
+         return true; // True if they are 
+       }
+       else 
+         return false; // Also returns false if it isn't a PuzzleNode object or not the same size board 
+     }
+   }
+   /** A field for storing the front object of the queue 
+    * 
+    */
+   private PuzzleNode game;
+   /** A field for storing the moves we've tried already with the puzzle
+    * 
+    */
+   private HashSet<String> possibleSolutions;
+   /** Constructor
+    * Sets the board to a default size of 3 x 3 
+    */
+   public SliderPuzzle1() {
+     game = new PuzzleNode(3);
+     possibleSolutions = new HashSet<String>();
+   }
+   /** Constructor 
+    * 
+    * @param size sets the size of the board to size x size
+    */
+   public SliderPuzzle1(int size) {
+     game = new PuzzleNode(size);
+     possibleSolutions = new HashSet<String>();
+   }
+   /** A method for returning the game field 
+    * 
+    * @return the current value of the game field 
+    */
+   public PuzzleNode game() {
+     return game;
+   }
+   /** A method for setting the value of the game field 
+    * 
+    * @param newGame the new value of the game field 
+    */
+   public void setGame(PuzzleNode newGame) {
+     game = newGame;
+   }
+   /** A method for returning a "board" equal to the one passed in 
+    * 
+    * @param current the board we want a copy of 
+    * @return the copy of the board 
+    */
+   public int[][] setEqual(PuzzleNode current) {
+     int[][] newArray = new int[current.boardSize()][current.boardSize()];
+     int[][] currentBoard = current.gameBoard();
+     // Goes through the inputted board and sets every value of the newArray to the corresponding value 
+     for (int i = 0; i < current.boardSize(); i++) {
+       int[] naRow = newArray[i];
+       int[] cbRow = currentBoard[i];
+       for (int j = 0; j < current.boardSize(); j++) {
+         naRow[j] = cbRow[j];
+       }
+     }
+     return newArray;
+   }
+   /** A method for returning a PuzzleNode where we have moved the space one to the right 
+    * 
+    * @param move the board we want to move the space of 
+    * @return a board that is equal to "move" with the space moved one to the right 
+    */
+   public PuzzleNode moveRight(PuzzleNode move) {
+     PuzzleNode answer = new PuzzleNode(move.boardSize());
+     int[][] newBoard = this.setEqual(move);
+     
+     if (move.column() + 1 < move.boardSize()) {
+       int swapValue = move.gameBoard()[move.row()][move.column() + 1]; // Gets the value one to the right ...
+       newBoard[move.row()][move.column()] = swapValue; // Sets the space equal to the swapValue...
+       newBoard[move.row()][move.column() + 1] = 0; // Sets the space where swap value was to 0 ...
+     }
+     // Sets the different fields of the PuzzleNode we're returning 
+     answer.setColumn(move.column() + 1); 
+     answer.setRow(move.row());
+     answer.setBoard(newBoard);
+     return answer;
+   }
+   /** A method for moving the space on a board one to the left 
+    * 
+    * @param move the board we want to move the space on 
+    * @return a board equal to "move" except the space has been moved one to the left
+    */
+   public PuzzleNode moveLeft(PuzzleNode move) {
+     PuzzleNode answer = new PuzzleNode(move.boardSize());
+     int[][] newBoard = this.setEqual(move);
+     
+     if (move.column() - 1 >= 0) {
+       int swapValue = move.gameBoard()[move.row()][move.column() - 1]; // Gets the value one to the left...
+       newBoard[move.row()][move.column()] = swapValue; // Sets the space equal to the swapValue...
+       newBoard[move.row()][move.column() - 1] = 0; // Sets the space where swap value was to 0...
+     }
+  // Sets the different fields of the PuzzleNode we're returning
+     answer.setColumn(move.column() - 1);
+     answer.setRow(move.row());
+     answer.setBoard(newBoard);
+     return answer;
+   }
+   /** A method for moving the space on a board one in the downward direction
+    * 
+    * @param move the board we want to move the space of 
+    * @return the new board where the space has been moved down oen 
+    */
+   public PuzzleNode moveDown(PuzzleNode move) {
+     PuzzleNode answer = new PuzzleNode(move.boardSize());
+     int[][] newBoard = this.setEqual(move);
+     
+     if (move.row() + 1 < move.boardSize()) {
+       int swapValue = move.gameBoard()[move.row() + 1][move.column()]; // Gets the value one below...
+       newBoard[move.row()][move.column()] = swapValue; // Sets the space equal to the swapValue...
+       newBoard[move.row() + 1][move.column()] = 0; // Sets the space where swapValue was equals to 0
+     }
+  // Sets the different fields of the PuzzleNode we're returning
+     answer.setRow(move.row() + 1);
+     answer.setColumn(move.column());
+     answer.setBoard(newBoard);
+     return answer;
+   }
+   /** A method for moving the space one position in the upward direction 
+    * 
+    * @param move the board we want to move the space position of 
+    * @return the new board with the space position moved one spot up 
+    */
+   public PuzzleNode moveUp(PuzzleNode move) {
+     PuzzleNode answer = new PuzzleNode(move.boardSize());
+     int[][] newBoard = this.setEqual(move);
+     
+     if (move.row() - 1 >= 0) {
+       int swapValue = move.gameBoard()[move.row() - 1][move.column()]; // Gets the value one above the space...
+       newBoard[move.row()][move.column()] = swapValue; // Sets the space equal to the swapValue 
+       newBoard[move.row() - 1][move.column()] = 0; // Sets the space where swapValue was to 0
+     }
+  // Sets the different fields of the PuzzleNode we're returning
+     answer.setRow(move.row() - 1);
+     answer.setColumn(move.column());
+     answer.setBoard(newBoard);
+     return answer;
+   }
+   /** A method for making one of four possible moves on the game field 
+    * 
+    */
+   public void makeMove() {
+     int choice = (int) (Math.random() * 4);
+     // Picks a random number that is used when picking what move should be made 
+     while (choice != -1) {
+      // If we can move to the right... 
+       if (choice == 0 && game.column() + 1 < game.boardSize()) {
+         this.setGame(this.moveRight(game)); // Move right 
+         choice = -1; // Exit the loop 
+       }
+       // If we can move to the left ... 
+       else if (choice == 1 && game.column() - 1 >= 0) {
+         this.setGame(this.moveLeft(game)); // Move left 
+         choice = -1; // Exit the loop
+       }
+       // If we can move down...
+       else if (choice == 2 && game.row() + 1 < game.boardSize()) {
+         this.setGame(this.moveDown(game)); // Move down
+         choice = -1; // Exit the loop
+       }
+       // If we can move up... 
+       else if (choice == 3 && game.row() - 1 >= 0) {
+         this.setGame(this.moveUp(game)); // Move up
+         choice = -1; // Exit the loop
+       }
+       // If we cannot make the move random value suggests...
+       else 
+         choice = (int) (Math.random() * 4); // Picks a new random value 
+     }
+   }
+   /** A method for randomizing the gameBoard
+    * 
+    * @param moves the number of random moves you want to make 
+    */
+   public void randomizeBoard(int moves) {
+     // Simply calls make move "moves" number of times
+    for (int i = 0; i < moves; i++) {
+       this.makeMove();
+     }
+   }
+   /** A method for testing whether or not a board is in the solved state 
+    * 
+    * @param board the board we want to know the status of  
+    * @return true if it is in the solved state, false if it is not 
+    */
+   public boolean checkIfSolved(PuzzleNode board) {
+     int[][] solutionBoard = new PuzzleNode(board.boardSize()).gameBoard();
+     int[][] currentBoard = board.gameBoard();
+     // Compares all values of the "board" to a new board because new boards are created solved 
+     for (int i = 0; i < currentBoard.length; i++) {
+       int[] solRow = solutionBoard[i];
+       int[] curRow = currentBoard[i];
+       for (int j = 0; j < currentBoard.length; j++) {
+         if (solRow[j] != curRow[j])
+           return false; // If a value doesn't match return false 
+       }
+     }
+     return true; // If all vaule s match return true 
+   }
+   /** A method for removing the first item in the queue
+    * 
+    */
+   public void removeFirst() {
+     if (game.next() != null) {
+       game = game.next(); // Sets the game field equal to the next item in the queue
+     }
+   }
+   /** A method for adding an item to the end of the queue 
+    * 
+    * @param insert the new node we want to add to the queue
+    */
+   public void insertToQueue(PuzzleNode insert) {
+     PuzzleNode location = game;
+     // Finds the last item in the queue
+     while (location.next() != null) {
+       location = location.next();
+     }
+     location.setNext(insert); // Attaches to the last item in the queue
+   }
+   /** A method for representing the SliderPuzzle as a string 
+    * 
+    * @return a string representation of the SliderPuzzle
+    */
+   @Override 
+   public String toString() {
+     return game.toString();
+   }
+   /** A method for solving the puzzle using a breadth first approach 
+    * 
+    * @param startingBoard the queue we have to work through in order to find the solution
+    */
+   public void breadthFirst(SliderPuzzle1 startingBoard) {
+     int currentRow = startingBoard.game().row();
+     int currentColumn = startingBoard.game().column();
+     int size = startingBoard.game().boardSize();
+     // If the first item in the queue isn't the solution ...
+     if (! startingBoard.checkIfSolved(startingBoard.game())) {
+      // add the first item with the space moved to the right if possible (to the queue)
+       if (currentColumn + 1 < size) {
+         PuzzleNode right = startingBoard.moveRight(startingBoard.game());
+         if (! possibleSolutions.contains(right.toString())) {
+           possibleSolutions.add(right.toString());
+           right.setParent(startingBoard.game());
+           startingBoard.insertToQueue(right);
+         }
+       }
+       // add the first item with the space moved to the left if possible (to the queue)
+       if (currentColumn - 1 >= 0) {
+         PuzzleNode left = startingBoard.moveLeft(startingBoard.game());
+         if (! possibleSolutions.contains(left.toString())) {
+           possibleSolutions.add(left.toString());
+           left.setParent(startingBoard.game());
+           startingBoard.insertToQueue(left);
+         }
+       }
+       // add the first item with the space moved one spot down if possible (to the queue)
+       if (currentRow - 1 >= 0) {
+         PuzzleNode up = startingBoard.moveUp(startingBoard.game());
+         if (! possibleSolutions.contains(up.toString())) {
+           possibleSolutions.add(up.toString());
+           up.setParent(startingBoard.game());
+           startingBoard.insertToQueue(up);
+         }
+       }
+       // add the first item with the space moved one spot up if possible (to the queue)
+       if (currentRow + 1 < size) {
+         PuzzleNode down = startingBoard.moveDown(startingBoard.game());
+         if (! possibleSolutions.contains(down.toString())) {
+           possibleSolutions.add(down.toString());
+           down.setParent(startingBoard.game());
+           startingBoard.insertToQueue(down);
+         }
+       }
+       // Remove the first item in the queue and call the method with the new first item
+       startingBoard.removeFirst();
+       startingBoard.breadthFirst(startingBoard);
+     }
+     // If the current board is the solution to the puzzle 
+     else {
+       PuzzleNode position = startingBoard.game();
+       System.out.println("breadthFirst");
+       // Print out it with all of it's parent values as well 
+       while (position != null) {
+         System.out.println(position);
+         position = position.parent();
+       }
+       return;
+     }
+   }
+   /** A method for solving the puzzle using a depth first approach 
+    * 
+    * @param startingBoard the value of the board we are starting with
+    */
+   public void depthFirst(PuzzleNode startingBoard)  {
+     int currentRow = startingBoard.row();
+     int currentColumn = startingBoard.column();
+     int size = startingBoard.boardSize();
+     // If the current board isn't a solution 
+     if (! this.checkIfSolved(startingBoard)) {
+      // If we can move to the right ...
+       if (currentColumn + 1 < size) {
+         PuzzleNode right = this.moveRight(startingBoard);
+         right.setParent(startingBoard);
+         if (possibleSolutions.contains(right.toString())) {
+           return ;
+         }
+         // and right isn't in the solutions hash set...
+         else {
+           possibleSolutions.add(right.toString()); // add it to the hash set ...
+           this.depthFirst(right); // make a recursion call with "right"
+         }
+       }
+       // If we can move to the left ... 
+       if (currentColumn - 1 >= 0) {
+         PuzzleNode left = this.moveLeft(startingBoard);
+         left.setParent(startingBoard);
+         if (possibleSolutions.contains(left.toString())) {
+           return ;
+         }
+         // and left isn't in the solution hash set ...
+         else {
+           possibleSolutions.add(left.toString()); // add it to the hash set...
+           this.depthFirst(left); // make a recursion call with "left"
+         }
+       }
+       // If we can move up ... 
+       if (currentRow - 1 >=0) {
+         PuzzleNode up = this.moveUp(startingBoard);
+         up.setParent(startingBoard);
+         if (possibleSolutions.contains(up.toString())) {
+           return ;
+         }
+         // and up isn't in the solution hash set
+         else {
+           possibleSolutions.add(up.toString()); // add it to the hash set ...
+           this.depthFirst(up);// make a recursion call with "up" 
+         }
+       }
+       // If we can move down ...
+       if (currentRow + 1 < size) {
+         PuzzleNode down = this.moveDown(startingBoard);
+         down.setParent(startingBoard);
+         if (possibleSolutions.contains(down.toString())) {
+           return ; 
+         }
+         // and it isn't in the solution hash set...
+         else {
+           possibleSolutions.add(down.toString()); // add it to the hash set ...
+           this.depthFirst(down); // make a recursion call with "down"
+         }
+       }
+     }
+     // If the current board is a solution to the puzzle 
+     else {
+       PuzzleNode position = startingBoard;
+       System.out.println("depthFirst");
+       // Print out all of the parents of the solution
+       while (position != null) {
+         System.out.println(position);
+         position = position.parent();
+       }
+       System.exit(0);
+     }
+   }
+   /** A method that allows the program to run
+    * 
+    * @param args required but not used
+    */
+   public static void main(String[] args){
+     SliderPuzzle1 a = new SliderPuzzle1();
+     SliderPuzzle1 b = new SliderPuzzle1();
+     System.out.println("Testing a 3 x 3 board \n");
+     a.randomizeBoard(10); 
+     b.randomizeBoard(10);
+     a.breadthFirst(a); // Solves a using breadth first
+     b.depthFirst(b.game()); // Solves b using breadth first
+     
+     a = new SliderPuzzle1(5);
+     b = new SliderPuzzle1(5);
+     System.out.println("Testing a 5 x 5 board \n");
+     a.randomizeBoard(10);
+     b.randomizeBoard(10);
+     a.breadthFirst(a); // Solves the 5 x 5 breadthFirst
+     b.depthFirst(b.game()); // Solves the 5 x 5 depthFirst
+   }
+}
+
